@@ -1,0 +1,5 @@
+/web-stats-mgmt
+/server
+*.test
+*.out
+.vscode
