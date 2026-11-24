@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/ckovacs/web-stats-mgmt/internal/pagespeed"
 )
 
@@ -15,7 +17,7 @@ func post(t *testing.T, psi *pagespeed.Client, body string) (int, map[string]any
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/scores", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := newApp(psi).Test(req, -1)
+	resp, err := newApp(psi).Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
