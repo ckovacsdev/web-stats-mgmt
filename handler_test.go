@@ -81,3 +81,16 @@ func TestScoresSuccessAndUpstreamError(t *testing.T) {
 		t.Errorf("status = %d, body = %v", code, out)
 	}
 }
+
+func TestHealthz(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	resp, err := newApp(pagespeed.New()).Test(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || string(raw) != `{"status":"ok"}` {
+		t.Errorf("status = %d, body = %s", resp.StatusCode, raw)
+	}
+}

@@ -43,6 +43,9 @@ func newApp(psi *pagespeed.Client) *fiber.App {
 	})
 	app.Use(recover.New())
 
+	app.Get("/healthz", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
 	app.Post("/scores", scoresHandler(psi))
 
 	return app
