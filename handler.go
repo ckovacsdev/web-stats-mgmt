@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 
 	"github.com/ckovacs/web-stats-mgmt/internal/pagespeed"
 )
@@ -22,9 +22,9 @@ type scoresRequest struct {
 }
 
 func scoresHandler(psi *pagespeed.Client) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		var req scoresRequest
-		if err := c.BodyParser(&req); err != nil {
+		if err := c.Bind().Body(&req); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "body must be JSON with \"url\" and \"token\"")
 		}
 

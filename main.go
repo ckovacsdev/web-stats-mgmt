@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"os"
@@ -8,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 
 	"github.com/ckovacs/web-stats-mgmt/internal/pagespeed"
 )
@@ -20,35 +21,37 @@ func main() {
 		port = "8080"
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	app := newApp(pagespeed.New())
-
-	go func() {
-		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-		<-sig
-		_ = app.ShutdownWithTimeout(10 * time.Second)
-	}()
-
-	if err := app.Listen(":" + port); err != nil {
+	err := app.Listen(":"+port, fiber.ListenConfig{
+		DisableStartupMessage: true,
+		GracefulContext:       ctx,
+		ShutdownTimeout:       10 * time.Second,
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func newApp(psi *pagespeed.Client) *fiber.App {
 	app := fiber.New(fiber.Config{
-		AppName:               "web-stats-mgmt",
-		DisableStartupMessage: true,
-		ReadTimeout:           10 * time.Second,
-		ErrorHandler:          jsonErrorHandler,
+		AppName:      "web-stats-mgmt",
+		ReadTimeout:  10 * time.Second,
+		ErrorHandler: jsonErrorHandler,
 	})
 	app.Use(recover.New())
 
+	app.Get("/healthz", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
 	app.Post("/scores", scoresHandler(psi))
 
 	return app
 }
 
-func jsonErrorHandler(c *fiber.Ctx, err error) error {
+func jsonErrorHandler(c fiber.Ctx, err error) error {
 	code := fiber.StatusInternalServerError
 	msg := "internal error"
 	var fe *fiber.Error

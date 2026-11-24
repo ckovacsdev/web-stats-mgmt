@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/ckovacs/web-stats-mgmt/internal/pagespeed"
 )
 
@@ -15,7 +17,7 @@ func post(t *testing.T, psi *pagespeed.Client, body string) (int, map[string]any
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/scores", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := newApp(psi).Test(req, -1)
+	resp, err := newApp(psi).Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,5 +79,18 @@ func TestScoresSuccessAndUpstreamError(t *testing.T) {
 	code, out = post(t, psi, `{"url":"https://example.com","token":"bad"}`)
 	if code != http.StatusTooManyRequests || out["error"] != "Quota exceeded" {
 		t.Errorf("status = %d, body = %v", code, out)
+	}
+}
+
+func TestHealthz(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	resp, err := newApp(pagespeed.New()).Test(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || string(raw) != `{"status":"ok"}` {
+		t.Errorf("status = %d, body = %s", resp.StatusCode, raw)
 	}
 }

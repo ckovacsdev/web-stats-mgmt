@@ -4,7 +4,6 @@ A state-less Go microservice to get stats about a website, user provides google 
 Not yet complete
 
 TODO:
-- [] Upgrade Go and Fiber to latest versions
 - [] Add Rate Limiting
 - [] Add CORS (if only going to be used on my website), and restrict URLs if meant to keep for my site only
 - [] Decide deployment and secrets management strategy
